@@ -1,0 +1,531 @@
+"use client"
+
+import { useState, useEffect, useRef, useCallback } from "react"
+import {
+  Globe,
+  ArrowLeft,
+  ArrowRight,
+  RotateCcw,
+  X,
+  Maximize2,
+  Minimize2,
+  Volume2,
+  VolumeX,
+  Send,
+  Bot,
+  Sparkles,
+  CheckCircle2,
+  Loader2,
+  MousePointer2,
+  Keyboard,
+  MoveVertical,
+  Eye,
+  Clock,
+  AlertCircle,
+  Brain,
+  Zap,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useAgentStore, speakText, type BrowserAction, type AgentStatus } from "@/lib/agent-store"
+
+const actionIcons: Record<string, React.ReactNode> = {
+  navigate: <Globe className="w-4 h-4" />,
+  click: <MousePointer2 className="w-4 h-4" />,
+  type: <Keyboard className="w-4 h-4" />,
+  scroll: <MoveVertical className="w-4 h-4" />,
+  screenshot: <Eye className="w-4 h-4" />,
+  extract: <Eye className="w-4 h-4" />,
+  wait: <Clock className="w-4 h-4" />,
+  complete: <CheckCircle2 className="w-4 h-4" />,
+  error: <AlertCircle className="w-4 h-4" />,
+  thinking: <Brain className="w-4 h-4" />,
+}
+
+const statusColors: Record<AgentStatus, { bg: string; text: string; dot: string }> = {
+  idle: { bg: "bg-gray-500/20", text: "text-gray-400", dot: "bg-gray-500" },
+  planning: { bg: "bg-yellow-500/20", text: "text-yellow-400", dot: "bg-yellow-500" },
+  executing: { bg: "bg-green-500/20", text: "text-green-400", dot: "bg-green-500" },
+  complete: { bg: "bg-cyan/20", text: "text-cyan", dot: "bg-cyan" },
+  error: { bg: "bg-red-500/20", text: "text-red-400", dot: "bg-red-500" },
+}
+
+const statusLabels: Record<AgentStatus, string> = {
+  idle: "Inactivo",
+  planning: "Planificando",
+  executing: "Ejecutando",
+  complete: "Completado",
+  error: "Error",
+}
+
+// Demo tasks for quick access
+const demoTasks = [
+  { icon: "🔍", label: "Buscar en Google", task: "Buscar en Google información sobre Los Cabos México", url: "https://www.google.com" },
+  { icon: "🏠", label: "Buscar en Airbnb", task: "Buscar alojamiento en Airbnb para Los Cabos", url: "https://www.airbnb.com" },
+  { icon: "🌐", label: "Abrir GoDaddy DNS", task: "Abrir GoDaddy y navegar a configuración DNS", url: "https://www.godaddy.com" },
+  { icon: "🚀", label: "Ver Vercel Dashboard", task: "Abrir Vercel dashboard y ver proyectos", url: "https://vercel.com" },
+  { icon: "🦆", label: "DuckDuckGo Search", task: "Buscar en DuckDuckGo noticias de tecnología", url: "https://duckduckgo.com" },
+]
+
+function ActionCard({ action, index }: { action: BrowserAction; index: number }) {
+  const isRunning = action.status === "running"
+  const isDone = action.status === "done"
+  const isError = action.status === "error"
+
+  return (
+    <div
+      className={`relative flex items-start gap-3 p-3 rounded-xl border transition-all duration-300 animate-in slide-in-from-left-5 ${
+        isRunning
+          ? "bg-cyan/10 border-cyan/30 shadow-lg shadow-cyan/10"
+          : isDone
+          ? "bg-secondary/50 border-border/30"
+          : isError
+          ? "bg-red-500/10 border-red-500/30"
+          : "bg-secondary/30 border-border/20"
+      }`}
+    >
+      {/* Step number */}
+      <div
+        className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+          isRunning
+            ? "bg-cyan text-navy-dark"
+            : isDone
+            ? "bg-green-500/20 text-green-400"
+            : isError
+            ? "bg-red-500/20 text-red-400"
+            : "bg-secondary text-muted-foreground"
+        }`}
+      >
+        {isDone ? (
+          <CheckCircle2 className="w-4 h-4" />
+        ) : isRunning ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          index + 1
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className={isRunning ? "text-cyan" : "text-muted-foreground"}>
+            {actionIcons[action.type]}
+          </span>
+          <span
+            className={`text-sm font-medium capitalize ${
+              isRunning ? "text-cyan" : "text-foreground"
+            }`}
+          >
+            {action.type === "thinking" ? "Pensando" : action.type}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+          {action.description}
+        </p>
+        {action.url && (
+          <p className="text-xs text-cyan/70 mt-1 truncate">{action.url}</p>
+        )}
+        {isRunning && (
+          <div className="mt-2 h-1 bg-secondary rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-cyan to-purple animate-[progress_1.5s_ease-in-out_infinite] w-full" />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function AgentBrowser() {
+  const {
+    isAgentModeOpen,
+    setAgentModeOpen,
+    currentUrl,
+    setCurrentUrl,
+    status,
+    setStatus,
+    actions,
+    addAction,
+    updateAction,
+    startTask,
+    completeTask,
+    clearTask,
+    voiceEnabled,
+    setVoiceEnabled,
+    isFullscreen,
+    setFullscreen,
+    showActionLog,
+    setShowActionLog,
+    setSpeaking,
+  } = useAgentStore()
+
+  const [taskInput, setTaskInput] = useState("")
+  const [urlInput, setUrlInput] = useState("")
+  const [result, setResult] = useState<string | null>(null)
+  const [proxyUrl, setProxyUrl] = useState<string>("")
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const actionsEndRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll actions
+  useEffect(() => {
+    actionsEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [actions])
+
+  // Update proxy URL when currentUrl changes
+  useEffect(() => {
+    if (currentUrl) {
+      // Use allorigins proxy for CORS
+      const encoded = encodeURIComponent(currentUrl)
+      setProxyUrl(`https://api.allorigins.win/raw?url=${encoded}`)
+    }
+  }, [currentUrl])
+
+  const executeTask = useCallback(async (task: string, url?: string) => {
+    startTask(task, url)
+    setResult(null)
+
+    if (voiceEnabled) {
+      speakText(`Iniciando tarea: ${task}`, () => setSpeaking(false))
+      setSpeaking(true)
+    }
+
+    try {
+      const response = await fetch("/api/agent/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task, url }),
+      })
+
+      if (!response.ok) throw new Error("Error en la API del agente")
+      if (!response.body) throw new Error("No hay stream disponible")
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let actionIndex = 0
+      const actionIds: string[] = []
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split("\n")
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6))
+
+              if (data.type === "status") {
+                setStatus(data.status)
+              } else if (data.type === "action") {
+                const id = addAction(data.action)
+                actionIds[actionIndex] = id
+                actionIndex++
+              } else if (data.type === "action_complete") {
+                const id = actionIds[data.index]
+                if (id) {
+                  updateAction(id, { status: data.status })
+                }
+              } else if (data.type === "navigate") {
+                setCurrentUrl(data.url)
+              } else if (data.type === "complete") {
+                setResult(data.result)
+                completeTask(data.result)
+                if (voiceEnabled) {
+                  speakText("Tarea completada exitosamente.", () => setSpeaking(false))
+                  setSpeaking(true)
+                }
+              } else if (data.type === "error") {
+                setStatus("error")
+                if (voiceEnabled) {
+                  speakText(`Error: ${data.message}`, () => setSpeaking(false))
+                  setSpeaking(true)
+                }
+              }
+            } catch {
+              // Ignore parse errors
+            }
+          }
+        }
+      }
+    } catch (error) {
+      setStatus("error")
+      console.error("Agent error:", error)
+    }
+  }, [startTask, voiceEnabled, setSpeaking, setStatus, addAction, updateAction, setCurrentUrl, completeTask])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!taskInput.trim()) return
+    executeTask(taskInput, urlInput || undefined)
+    setTaskInput("")
+  }
+
+  const handleDemoTask = (task: string, url?: string) => {
+    setTaskInput(task)
+    if (url) setUrlInput(url)
+    executeTask(task, url)
+  }
+
+  const handleClose = () => {
+    setAgentModeOpen(false)
+    clearTask()
+    setProxyUrl("")
+    setResult(null)
+  }
+
+  if (!isAgentModeOpen) return null
+
+  return (
+    <div
+      className={`fixed inset-0 z-[100] bg-navy-dark/95 backdrop-blur-xl transition-all duration-500 ${
+        isFullscreen ? "" : "p-4 md:p-8"
+      }`}
+    >
+      {/* Particle effect background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(30)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-cyan/30 rounded-full animate-float"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${5 + Math.random() * 10}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      <div
+        className={`relative h-full flex flex-col ${
+          isFullscreen ? "" : "rounded-2xl border border-border/30 overflow-hidden"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-secondary/50 border-b border-border/30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan to-purple flex items-center justify-center">
+              <Bot className="w-5 h-5 text-navy-dark" />
+            </div>
+            <div>
+              <h2 className="font-bold text-foreground">Agente Autónomo iAngelo</h2>
+              <p className="text-xs text-muted-foreground">Navegación web con IA</p>
+            </div>
+          </div>
+
+          {/* Status indicator */}
+          <div
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${statusColors[status].bg}`}
+          >
+            <div
+              className={`w-2 h-2 rounded-full ${statusColors[status].dot} ${
+                status === "executing" || status === "planning" ? "animate-pulse" : ""
+              }`}
+            />
+            <span className={`text-sm font-medium ${statusColors[status].text}`}>
+              {statusLabels[status]}
+            </span>
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setVoiceEnabled(!voiceEnabled)}
+              className="rounded-xl text-muted-foreground hover:text-cyan"
+            >
+              {voiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowActionLog(!showActionLog)}
+              className="rounded-xl text-muted-foreground hover:text-cyan"
+            >
+              {showActionLog ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setFullscreen(!isFullscreen)}
+              className="rounded-xl text-muted-foreground hover:text-cyan"
+            >
+              {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              className="rounded-xl text-muted-foreground hover:text-red-400"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Action log sidebar */}
+          {showActionLog && (
+            <div className="w-80 border-r border-border/30 bg-secondary/30 flex flex-col">
+              <div className="p-3 border-b border-border/30">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-cyan" />
+                  Registro de Acciones
+                </h3>
+              </div>
+              <ScrollArea className="flex-1 p-3">
+                <div className="space-y-2">
+                  {actions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Las acciones aparecerán aquí
+                    </p>
+                  ) : (
+                    actions.map((action, index) => (
+                      <ActionCard key={action.id} action={action} index={index} />
+                    ))
+                  )}
+                  <div ref={actionsEndRef} />
+                </div>
+              </ScrollArea>
+
+              {/* Result panel */}
+              {result && (
+                <div className="p-3 border-t border-border/30 bg-cyan/5">
+                  <h4 className="text-sm font-semibold text-cyan mb-2 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Resultado
+                  </h4>
+                  <p className="text-sm text-foreground leading-relaxed max-h-32 overflow-y-auto">
+                    {result}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Browser panel */}
+          <div className="flex-1 flex flex-col">
+            {/* Browser toolbar */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-secondary/50 border-b border-border/30">
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* URL bar */}
+              <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary border border-border/30">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={currentUrl || "about:blank"}
+                  readOnly
+                  className="flex-1 bg-transparent text-sm text-foreground outline-none"
+                />
+                {status === "executing" && (
+                  <Loader2 className="w-4 h-4 text-cyan animate-spin" />
+                )}
+              </div>
+            </div>
+
+            {/* Browser viewport */}
+            <div className="flex-1 relative bg-white">
+              {currentUrl && proxyUrl ? (
+                <iframe
+                  ref={iframeRef}
+                  src={proxyUrl}
+                  className="absolute inset-0 w-full h-full border-0"
+                  sandbox="allow-scripts allow-same-origin"
+                  title="Agent Browser"
+                />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-navy-dark to-background">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan to-purple flex items-center justify-center mb-6">
+                    <Bot className="w-10 h-10 text-navy-dark" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">
+                    Agente listo para navegar
+                  </h3>
+                  <p className="text-muted-foreground mb-8">
+                    Escribe una tarea o selecciona una demo
+                  </p>
+
+                  {/* Demo tasks */}
+                  <div className="flex flex-wrap justify-center gap-2 max-w-xl">
+                    {demoTasks.map((demo, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleDemoTask(demo.task, demo.url)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-secondary/50 border border-border/30 hover:border-cyan/30 hover:bg-cyan/5 transition-all"
+                      >
+                        <span>{demo.icon}</span>
+                        <span className="text-sm text-foreground">{demo.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Loading overlay */}
+              {(status === "planning" || status === "executing") && (
+                <div className="absolute inset-0 bg-navy-dark/50 backdrop-blur-sm flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full border-4 border-cyan/30 border-t-cyan animate-spin" />
+                      <Brain className="w-8 h-8 text-cyan absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <p className="text-cyan font-medium">
+                      {status === "planning" ? "Planificando acciones..." : "Ejecutando tarea..."}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Task input */}
+            <form
+              onSubmit={handleSubmit}
+              className="p-4 bg-secondary/50 border-t border-border/30"
+            >
+              <div className="flex gap-2">
+                <Input
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="URL (opcional)"
+                  className="w-48 bg-secondary border-border/30"
+                />
+                <Input
+                  value={taskInput}
+                  onChange={(e) => setTaskInput(e.target.value)}
+                  placeholder="Describe la tarea que quieres que ejecute el agente..."
+                  className="flex-1 bg-secondary border-border/30"
+                />
+                <Button
+                  type="submit"
+                  disabled={!taskInput.trim() || status === "executing" || status === "planning"}
+                  className="px-6 bg-gradient-to-r from-cyan to-purple text-navy-dark font-semibold hover:opacity-90"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Ejecutar
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

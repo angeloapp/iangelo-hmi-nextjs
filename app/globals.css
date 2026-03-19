@@ -1,0 +1,298 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Dark Navy Futuristic Theme - iAngelo (Default Dark) */
+  --background: oklch(0.12 0.02 260);
+  --foreground: oklch(0.95 0.01 260);
+  --card: oklch(0.15 0.025 260);
+  --card-foreground: oklch(0.95 0.01 260);
+  --popover: oklch(0.13 0.02 260);
+  --popover-foreground: oklch(0.95 0.01 260);
+  --primary: oklch(0.75 0.18 195);
+  --primary-foreground: oklch(0.12 0.02 260);
+  --secondary: oklch(0.18 0.03 260);
+  --secondary-foreground: oklch(0.90 0.01 260);
+  --muted: oklch(0.20 0.025 260);
+  --muted-foreground: oklch(0.65 0.02 260);
+  --accent: oklch(0.65 0.20 300);
+  --accent-foreground: oklch(0.95 0.01 260);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.95 0.01 260);
+  --border: oklch(0.25 0.04 260);
+  --input: oklch(0.18 0.03 260);
+  --ring: oklch(0.75 0.18 195);
+  --chart-1: oklch(0.75 0.18 195);
+  --chart-2: oklch(0.65 0.20 300);
+  --chart-3: oklch(0.60 0.15 250);
+  --chart-4: oklch(0.70 0.16 280);
+  --chart-5: oklch(0.80 0.15 200);
+  --radius: 0.75rem;
+  
+  /* Custom iAngelo colors */
+  --cyan: oklch(0.80 0.18 195);
+  --purple: oklch(0.65 0.22 300);
+  --navy-dark: oklch(0.08 0.02 260);
+  --navy-light: oklch(0.18 0.03 260);
+  --glow-cyan: oklch(0.85 0.20 195);
+  --glow-purple: oklch(0.70 0.25 300);
+}
+
+/* Light theme */
+.light {
+  --background: oklch(0.98 0.01 260);
+  --foreground: oklch(0.15 0.02 260);
+  --card: oklch(0.99 0.005 260);
+  --card-foreground: oklch(0.15 0.02 260);
+  --popover: oklch(0.99 0.005 260);
+  --popover-foreground: oklch(0.15 0.02 260);
+  --primary: oklch(0.55 0.20 195);
+  --primary-foreground: oklch(0.99 0.01 260);
+  --secondary: oklch(0.95 0.01 260);
+  --secondary-foreground: oklch(0.20 0.02 260);
+  --muted: oklch(0.92 0.01 260);
+  --muted-foreground: oklch(0.45 0.02 260);
+  --accent: oklch(0.55 0.22 300);
+  --accent-foreground: oklch(0.99 0.01 260);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0.01 260);
+  --border: oklch(0.88 0.02 260);
+  --input: oklch(0.95 0.01 260);
+  --ring: oklch(0.55 0.20 195);
+  
+  /* Light mode iAngelo colors */
+  --cyan: oklch(0.55 0.20 195);
+  --purple: oklch(0.50 0.22 300);
+  --navy-dark: oklch(0.15 0.02 260);
+  --navy-light: oklch(0.95 0.01 260);
+  --glow-cyan: oklch(0.60 0.22 195);
+  --glow-purple: oklch(0.55 0.25 300);
+}
+
+.dark {
+  --background: oklch(0.12 0.02 260);
+  --foreground: oklch(0.95 0.01 260);
+  --card: oklch(0.15 0.025 260);
+  --card-foreground: oklch(0.95 0.01 260);
+  --popover: oklch(0.13 0.02 260);
+  --popover-foreground: oklch(0.95 0.01 260);
+  --primary: oklch(0.75 0.18 195);
+  --primary-foreground: oklch(0.12 0.02 260);
+  --secondary: oklch(0.18 0.03 260);
+  --secondary-foreground: oklch(0.90 0.01 260);
+  --muted: oklch(0.20 0.025 260);
+  --muted-foreground: oklch(0.65 0.02 260);
+  --accent: oklch(0.65 0.20 300);
+  --accent-foreground: oklch(0.95 0.01 260);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.95 0.01 260);
+  --border: oklch(0.25 0.04 260);
+  --input: oklch(0.18 0.03 260);
+  --ring: oklch(0.75 0.18 195);
+  
+  --cyan: oklch(0.80 0.18 195);
+  --purple: oklch(0.65 0.22 300);
+  --navy-dark: oklch(0.08 0.02 260);
+  --navy-light: oklch(0.18 0.03 260);
+  --glow-cyan: oklch(0.85 0.20 195);
+  --glow-purple: oklch(0.70 0.25 300);
+}
+
+@theme inline {
+  --font-sans: 'Inter', 'Geist', 'Geist Fallback', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-cyan: var(--cyan);
+  --color-purple: var(--purple);
+  --color-navy-dark: var(--navy-dark);
+  --color-navy-light: var(--navy-light);
+  --color-glow-cyan: var(--glow-cyan);
+  --color-glow-purple: var(--glow-purple);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom animations for iAngelo HMI Edition */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes counter-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes progress {
+  0% { transform: scaleX(0); }
+  50% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
+}
+
+@keyframes holographic {
+  0% { 
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  50% { 
+    background-position: 100% 50%;
+    filter: hue-rotate(30deg);
+  }
+  100% { 
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3),
+                0 0 40px rgba(0, 240, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.5),
+                0 0 60px rgba(0, 240, 255, 0.2);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+.animate-counter {
+  animation: counter-up 0.5s ease-out forwards;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-holographic {
+  background-size: 400% 400%;
+  animation: holographic 10s ease infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Glassmorphism effects */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Neon text effects */
+.neon-cyan {
+  text-shadow: 
+    0 0 5px rgba(0, 240, 255, 0.5),
+    0 0 10px rgba(0, 240, 255, 0.3),
+    0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.neon-purple {
+  text-shadow: 
+    0 0 5px rgba(139, 92, 246, 0.5),
+    0 0 10px rgba(139, 92, 246, 0.3),
+    0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--secondary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cyan);
+}
+
+/* Selection styling */
+::selection {
+  background: var(--cyan);
+  color: var(--navy-dark);
+}
