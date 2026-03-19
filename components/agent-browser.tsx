@@ -440,7 +440,7 @@ export function AgentBrowser() {
 
             {/* Browser viewport */}
             <div className="flex-1 relative bg-white">
-              {currentUrl && proxyUrl ? (
+              {currentUrl? (
                 <iframe
                   ref={iframeRef}
                   src={currentUrl}
